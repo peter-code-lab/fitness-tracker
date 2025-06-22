@@ -1,12 +1,11 @@
 "use client";
 
-// A modern fitness tracker starter app using Next.js + TailwindCSS (local version without backend)
-// Features: Add/Remove/Drag Workout Cards (localStorage instead of Supabase)
+// A modern fitness tracker with dark mode and improved visuals
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { DndContext, closestCenter } from "@dnd-kit/core";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -20,15 +19,22 @@ function SortableWorkout({ workout, removeWorkout }) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Card className="flex justify-between items-center p-4 mb-2">
-        <div>
-          <CardContent className="text-lg font-semibold">{workout.name}</CardContent>
-          <div className="text-sm text-gray-500">
+    <div ref={setNodeRef} style={style}>
+      <Card className="flex justify-between items-center p-4 mb-3 bg-zinc-800 text-white rounded-xl shadow-md">
+        <div className="flex flex-col flex-grow cursor-grab select-none pr-4" {...attributes} {...listeners}>
+          <CardContent className="text-xl font-semibold text-white">{workout.name}</CardContent>
+          <div className="text-sm text-zinc-400">
             {new Date(workout.date).toLocaleString()}
           </div>
         </div>
-        <Button variant="destructive" onClick={() => removeWorkout(workout.id)}>
+        <Button
+          variant="destructive"
+          className="bg-red-600 hover:bg-red-700 text-white"
+          onClick={(e) => {
+            e.stopPropagation();
+            removeWorkout(workout.id);
+          }}
+        >
           Remove
         </Button>
       </Card>
@@ -64,8 +70,10 @@ export default function Home() {
   };
 
   const removeWorkout = (id) => {
-    setWorkouts(workouts.filter((w) => w.id !== id));
+    setWorkouts((prev) => prev.filter((w) => w.id !== id));
   };
+
+  const sensors = useSensors(useSensor(PointerSensor));
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -78,19 +86,19 @@ export default function Home() {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">My Fitness Tracker</h1>
-      <div className="flex flex-col gap-2 mb-4">
+    <div className="min-h-screen bg-zinc-900 text-white p-6 max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6 text-center">🏋️ My Fitness Tracker</h1>
+      <div className="flex flex-col gap-3 mb-6">
         <input
           type="text"
           value={newWorkout}
           onChange={(e) => setNewWorkout(e.target.value)}
-          className="border p-2 rounded"
+          className="border border-zinc-600 bg-zinc-800 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           placeholder="Workout name"
         />
-        <Button onClick={addWorkout}>Add</Button>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white" onClick={addWorkout}>Add Workout</Button>
       </div>
-      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={workouts.map((w) => w.id)} strategy={verticalListSortingStrategy}>
           {workouts.map((workout) => (
             <SortableWorkout key={workout.id} workout={workout} removeWorkout={removeWorkout} />
